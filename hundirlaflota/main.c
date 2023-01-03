@@ -4,11 +4,13 @@
 * @author Antonio Suano Lara
 */
 
-char modoAperturaFichero[2] = "a+";
+char modoAperturaFicheroInsertarPuntuacion[1] = "a";
+char modoAperturaFicheroLeerFichero[2] = "r+";
 char nombreFicheroPuntuaciones[] = "puntuaciones.txt";
 
 void mostrarMenu();
 void tratarOpcionPuntuaciones();
+void insertarPuntuacion(char* puntuacion);
 
 int main()
 {
@@ -27,6 +29,7 @@ int main()
             case 2:
                 // Opción jugar
                 printf("Ha seleccionado jugar... COMING SOON.\n");
+                insertarPuntuacion("HELLO MY FRIEND");
                 break;
             case 3:
                 printf("Esperamos haya disfrutado.\n");
@@ -47,15 +50,51 @@ void mostrarMenu(){
     printf("Introduzca la opción deseada: ");
 }
 
+/**
+ * Opcion de tratar las puntuaciones, leemos el archivo e imprimimos su contenido
+*/
 void tratarOpcionPuntuaciones(){
 
-    FILE *fichero = fopen(nombreFicheroPuntuaciones, modoAperturaFichero);
+    /* Abrimos el archivo en modo lectura */
+    FILE *fichero = fopen(nombreFicheroPuntuaciones, modoAperturaFicheroLeerFichero);
+    char content;
 
-    if(fichero == NULL){
-        printf("Error al abrir el fichero de puntuaciones.");
+    if(fichero != NULL){
+        // Obtenemos la primera linea
+        content = fgetc(fichero);
+
+        // Mientras lo que nos devuelva no sea End of File, imprimimos por pantalla y volvemos a recoger contenido
+        while(content != EOF){
+            printf ( "%c", content);
+            content = fgetc(fichero);
+        }
+        printf("\n");
+
+        /* Cerramos el fichero para que no se corrompa */
+        fclose(fichero);
     }else{
-        // print all puntuaciones
+        printf("Error al abrir el fichero de puntuaciones.");
     }
 
-    fclose(fichero);
+}
+
+/**
+ * Inserta en el fichero especificado en constantes la cadena de char introducida
+*/
+void insertarPuntuacion(char* puntuacion){
+
+    /* Abre el fichero en modo escritura */
+    FILE *fichero = fopen(nombreFicheroPuntuaciones, modoAperturaFicheroInsertarPuntuacion);
+
+    if(fichero != NULL){
+        
+        /* Insertamos un line break primero y luego el contenido */
+        fputs("\n", fichero);
+        fputs(puntuacion, fichero);
+
+        fclose(fichero);
+    }else{
+        printf("Error al abrir el fichero de puntuaciones.");
+    }
+
 }
