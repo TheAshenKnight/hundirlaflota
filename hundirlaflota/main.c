@@ -1,21 +1,23 @@
 #include <stdio.h>
 #include <stdlib.h> //rand()
+#include <string.h>
 #include <time.h>
 #include <stdbool.h> //true/false
 
 //#include <string.h> //
 
 #define N 7 //tamano del tablero
+#define PUNTUACIONMAXIMA 16
 
-void creartablerovacio(char tablero[N][N]); //crear un tablero de N*N con . representando agua
-void iabarcosaleatorios(char tablero[N][N]); //dado un tablero genera los barcos de manera aleatoria
+void crearTableroVacio(char tablero[N][N]); //crear un tablero de N*N con . representando agua
+void iaBarcosAleatorios(char tablero[N][N]); //dado un tablero genera los barcos de manera aleatoria
 bool mirarPosicionDeBarco(char tablero[N][N],int x,int y, int direccion, int tamaino); //dada la coordenada orientacion y el tamano del barco devuelve verdadero si el barco se puede colocar en esas coordenadas
 void colocarBarco(char tablero[N][N],int x,int y, int direccion, int tamaino); //dada la coordenada orientacion y el tamano del barco, coloca el barco en el tablero asignado
 void iaMovimiento(int ordendisparos[N*N][2]); //crear una matriz de [N*N] [2] que representa todos los disparos que va a hacer la ia a lo largo de toda la partida
 void jugadorColocarBarco(char tablero[N][N]); // colocar los barcos del jugador
 bool mirarDisparo(char tablero[N][N],int x,int y); //dando las coordeanadas de dispara devuelve verdadero si ha impactado en un barco
-void imprimirjuego(char tablero1[N][N],char tablero2[N][N],int puntosJugador, int puntosIA); //imprime los dos tableros del juego y la puntuacion de cada uno
-void imprimirtablero(char tablero[N][N], bool oculto); //imprimir un tablero por pantalla,  se puede hacer de manera oculta no imprimiendo los barcos
+void imprimirJuego(char tablero1[N][N],char tablero2[N][N],int puntosJugador, int puntosIA); //imprime los dos tableros del juego y la puntuacion de cada uno
+void imprimirTablero(char tablero[N][N], bool oculto); //imprimir un tablero por pantalla,  se puede hacer de manera oculta no imprimiendo los barcos
 
 void limpiarPantalla();
 //colores
@@ -40,6 +42,7 @@ int main()
     int puntosJugador = 0;
     int puntosIA = 0;
     int ronda = 0;
+    int numTurnos = 0;
     
     int disparoX,disparoY;
     char disparo2Y;
@@ -47,26 +50,24 @@ int main()
     bool ganar = false;
     bool turno = true;
 
-    creartablerovacio(tablero1); //asignar valores al tablero representando el agua
-    creartablerovacio(tablero2);
+    crearTableroVacio(tablero1); //asignar valores al tablero representando el agua
+    crearTableroVacio(tablero2);
     
     //jugadorColocarBarco(tablero2); //colocar los barcos del jugador
-    iabarcosaleatorios(tablero2);
+    iaBarcosAleatorios(tablero2);
     
-    iabarcosaleatorios(tablero1); //colocar los barcos de la ia
+    iaBarcosAleatorios(tablero1); //colocar los barcos de la ia
     
-    imprimirjuego(tablero1,tablero2,puntosJugador,puntosIA); //imprimir los dos tableros del juego con los aciertos de cada uno
+    //imprimirJuego(tablero1,tablero2,puntosJugador,puntosIA); //imprimir los dos tableros del juego con los aciertos de cada uno
     
     while(!ganar){ //jugar partida
         if(turno){
-
+            imprimirJuego(tablero1,tablero2,puntosJugador,puntosIA);
             printf("\nIntruce el disparo en X(0-6): ");
             scanf("%d",&disparoX);
             printf("\nIntruce el disparo en Y(A-G): ");
             scanf(" %c",&disparo2Y);
             disparoY = tolower(disparo2Y) - 97;
-            
-
         }
         else{
             disparoX = ordendisparos[ronda][0];
@@ -77,38 +78,47 @@ int main()
             
             if(turno && mirarDisparo(tablero1,disparoX,disparoY)){
                 puntosJugador++;
-                tablero1[disparoY][disparoY] = 'T';
+                tablero1[disparoX][disparoY] = 'T';
                 printf("\nBarco!!");
             }
             else if(turno && !mirarDisparo(tablero1,disparoX,disparoY)){
-                tablero1[disparoY][disparoY] = 'F';
+                tablero1[disparoX][disparoY] = 'F';
                 printf("\nAgua!!");
                 turno = !turno;
             }
             else if(!turno && mirarDisparo(tablero2,disparoX,disparoY)){
                 puntosIA++;
                 printf("\nLa IA a DADO A TU barco!!");
-                tablero2[disparoY][disparoY] = 'T';
+                tablero2[disparoX][disparoY] = 'T';
             }
             else if(!turno && !mirarDisparo(tablero2,disparoX,disparoY)){
                 printf("\nLa IA a DADO Agua!!");
-                tablero2[disparoY][disparoY] = 'F';
+                tablero2[disparoX][disparoY] = 'F';
                 turno = !turno;
             }
             if(!turno){
                 printf("\nRonda actual: %d", ronda);
                 ronda ++;
             }
+
+            numTurnos++;
+
         }
         else{
             printf("\nPosicion fuera del tablero");
         }
-        imprimirjuego(tablero1,tablero2,puntosJugador,puntosIA);
-        if(puntosJugador == 16){
+        
+        if(puntosJugador == PUNTUACIONMAXIMA){
             printf("\mEL Jugador ha ganado la partida");
             ganar = true;
+            // Guardamos la puntuacion
+            char iniciales[] = "";
+            printf("\mIntroduzca sus iniciales: ");
+            scanf("%c ",&iniciales);
+            
+            insertarPuntuacion(strcat(iniciales, numTurnos));
         }
-        else if(puntosIA == 16){
+        else if(puntosIA == PUNTUACIONMAXIMA){
             printf("\mLa IA ha ganado la partida");
             ganar = true;
         }
@@ -116,11 +126,11 @@ int main()
     }
     return 0;
 }
-void imprimirjuego(char tablero1[N][N],char tablero2[N][N], int puntosJugador, int puntosIA){
+void imprimirJuego(char tablero1[N][N],char tablero2[N][N], int puntosJugador, int puntosIA){
     printf("\ntablero jugador 1");
-    imprimirtablero(tablero2,false);
+    imprimirTablero(tablero2,false);
     printf("\ntablero IA");
-    imprimirtablero(tablero1,true);
+    imprimirTablero(tablero1,true);
     printf("\nBarcos acertados por el jugador: %d", puntosJugador);
     printf("\nBarcos acertados por el jugador: %d", puntosIA);
 }
@@ -146,7 +156,7 @@ void jugadorColocarBarco(char tablero[N][N]){
             for(int j = 0; j != 3;j++){ //imprimir la cantidad de barcos restantes para colocar
                 printf("\ntamaino %d: %d",tamaino,barcos[j]);
             }
-            imprimirtablero(tablero,false);
+            imprimirTablero(tablero,false);
             int posicionX,direccion; //declarar variables para posicionar el barco del turno
             char posicionY;
             bool posible;
@@ -265,7 +275,7 @@ bool mirarPosicionDeBarco(char tablero[N][N],int x,int y, int direccion, int tam
     }
     return posible;
 }
-void iabarcosaleatorios(char tablero[N][N]){
+void iaBarcosAleatorios(char tablero[N][N]){
     int barcos[3];
     bool posible;
     barcos[0] = 1; //barcos de 4 
@@ -310,14 +320,14 @@ void colocarBarco(char tablero[N][N],int x,int y, int direccion, int tamaino){ /
         }
     }
 }
-void creartablerovacio(char tablero[N][N]){ //crea un tablero de N x N con . representando el valor de vacio/agua
+void crearTableroVacio(char tablero[N][N]){ //crea un tablero de N x N con . representando el valor de vacio/agua
     for (int i=0; i<N; i++){
         for (int j=0; j<N; j++){
             tablero[i][j] = '.';
         }
     }
 }
-void imprimirtablero(char tablero[N][N], bool oculto){
+void imprimirTablero(char tablero[N][N], bool oculto){
     //limpiarPantalla();
     //system("clear");
 
