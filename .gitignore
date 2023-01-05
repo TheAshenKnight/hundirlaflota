@@ -5,3 +5,9 @@
 hundirlaflota/.vscode/c_cpp_properties.json
 hundirlaflota/.vscode/launch.json
 hundirlaflota/.vscode/settings.json
+hundirlaflota/vcpkg/
+hundirlaflota/puntuaciones.txt
+hundirlaflota/main.exe
+hundirlaflota/build/Debug/outDebug.exe
+hundirlaflota/build/Debug/main.o
+hundirlaflota/.vscode/tasks.json
