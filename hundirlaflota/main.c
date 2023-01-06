@@ -4,7 +4,22 @@
 #include <time.h>
 #include <stdbool.h> //true/false
 
-//#include <string.h> //
+//KeyboardKontroll
+#include <unistd.h>
+#include <termios.h>
+
+//COLORES
+
+void black(char a[]);
+void red(char a[]);
+void green(char a[]);
+void yellow(char a[]);
+void blue(char a[]);
+void purple(char a[]);
+void cian(char a[]);
+void white(char a[]);
+void reset();
+
 
 #define N 7 //tamano del tablero
 #define PUNTUACIONMAXIMA 16
@@ -29,8 +44,83 @@ char nombreFicheroPuntuaciones[] = "puntuaciones.txt";
 void tratarOpcionPuntuaciones();
 void insertarPuntuacion(char puntuacion[]);
 
-int main()
-{
+//FUNCIONES
+
+char getch(void);    
+void clearScreen();   
+//void delay(int timer);
+void createEmptyBoard(char [N][N]);
+void printBoard(char [N][N]);
+void startGame(char [N][N]);
+void printLogo(int i,int b,bool a);
+void setShip(char [N][N]);
+void placeShip(char [N][N], int ship);
+//void printLoadMenu();
+void printStart(bool q,bool w,bool e);
+
+int main(){
+    char input = ' '; //variable para controlar los imputs del teclado
+    char b[N][N]; //matriz del jugador 1
+    char c[N][N]; // matriz del jugador 2
+    int count = 0; //controlar la opcion selecionada
+    printLogo(1,0,true); //dibujar el logo de battleship 
+    printStart(1,0,0); //dibujar el menu con sus opciones en el color de la opcion selecionada
+    while(true){
+        input = tolower(getch()); //mirar si ha pulsado a/A o d/D para moverse entre las opciones
+        clearScreen(); //borrar todo el contenido de la terminal(la funcion system("clear") no me funciona en el compilador online)
+        printLogo(1,0,true); //dibujar el logo de battleship
+        switch(input){
+        case 'a': //mover la seleccion hacia la izquierda
+            count --;
+            if(count == -1){ //resetear la selecion y pasar al lado contrario
+                count =2;
+            }
+            if(count == 0){
+                printStart(1,0,0);
+            }
+            else if(count == 1){
+                printStart(0,1,0);
+            }
+            else if(count == 2){
+                printStart(0,0,1);
+            }
+            break;
+        case 'd': //mover la seleccion hacia la derecha
+            count ++;
+            if(count == 3){ //resetear la selecion y pasar al lado contrario
+                count =0;
+            }
+            if(count == 0){
+                printStart(1,0,0);
+            }
+            else if(count == 1){
+                printStart(0,1,0);
+            }
+            else if(count == 2){
+                printStart(0,0,1);
+            }
+            
+            break;
+        default:
+            if(count==0){ //si la opcion selecionada es start, empezar el juego
+                startGame(b);
+            }
+            else if(count==1){ //si la opcion selecionada es score, mostrar la puntuacion
+                //ver puntaciones
+                tratarOpcionPuntuaciones();
+                printf("\npress a or d to go back");
+            }
+            else if(count==3){ //si la opcion selecionada es exit, salir del juego
+                _exit;
+            }
+        }
+    }
+    return 0;
+}
+    
+
+void startGame(char b[N][N]){
+    clearScreen();
     int ordendisparos[N*N][2];
     iaMovimiento(ordendisparos); //declarar todos los movimientos que va a tener la ia en la partida
 
@@ -134,8 +224,350 @@ int main()
         }
             
     }
-    return 0;
+    
 }
+void setShip(char b[N][N]){ //funcion para selecionar que barco quieres colocar
+    int aircraftCarrier = 1;
+    int cruiseShips = 2;
+    int patrolBoats = 3;
+    int ship;
+    printf("\nRemaining (%d) aircraftCarrier : 1 \nRemaining (%d) cruiseShips: 2 \nRemaining (%d) patrolBoats: 3 \nwhat do you want to place: ",aircraftCarrier,cruiseShips,patrolBoats);
+    scanf("%d",&ship); //selecionar el tipo de barco
+    switch(ship){
+        case 1:
+            aircraftCarrier--; //restar a la cantidad de barcos restantes
+            if(aircraftCarrier<0){ //si no queda ningun borco de este tipo
+                printf("\n0 aircraftCarrier remaining");
+                printf("\nRemaining %d cruiseShips: 2 \nRemaining %d patrolBoats: 3 \nWhat do you want to place: ",cruiseShips,patrolBoats);
+                scanf("%d",&ship);
+            }
+            placeShip(b,ship);
+            break;
+        case 2:
+            cruiseShips--; //restar a la cantidad de barcos restantes
+            if(cruiseShips<0){
+                printf("\n0 cruiseShips remaining");
+                printf("\nRemaining %d aircraftCarrier : 1 \nRemaining %d patrolBoats: 3 \nWhat do you want to place: ",aircraftCarrier,patrolBoats);
+                scanf("%d",&ship);
+            }
+            placeShip(b,ship);
+            break;
+        case 3:
+            patrolBoats--; //restar a la cantidad de barcos restantes
+            if(patrolBoats<0){
+                printf("\n0 patrolBoats remaining");
+                printf(" \nRemaining %d aircraftCarrier : 1 \nRemaining %d cruiseShips: 2 \nWhat do you want to place?",aircraftCarrier,cruiseShips);
+                scanf("%d",&ship);
+            }
+            placeShip(b,ship);
+            break;
+        default:
+            printf("\nRemaining (%d) aircraftCarrier : 1 \nRemaining (%d) cruiseShips: 2 \nRemaining (%d) patrolBoats: 3 \nwhat do you want to place: ",aircraftCarrier,cruiseShips,patrolBoats);
+            scanf("%d",&ship);
+            break;
+    }
+}
+void placeShip(char b[N][N],int ship){ //funcion para colocar el barco en la posicion de la matriz selecionada
+    clearScreen;
+    printBoard(b);
+    int x;
+    int y;
+    int shiplong;
+    int direction;
+    int a;
+    //int selectedPos[2] = [-1,-1];
+    
+    //definir la longitud de cada barco(estaria bien hacerlo con una libreria)
+    if(ship == 1){
+        shiplong = 4;
+    }
+    else if(ship == 2){
+        shiplong = 3;
+    }
+    else if(ship == 2){
+        shiplong = 2;
+    }
+    
+
+
+    printf("\nwhere do you want to place your ship?");
+    printf("\nx: ");
+
+    scanf("%d",&x); //selecionar la fila que quieres colocar el barco
+    printf("\ny: ");
+    scanf("%d",&y); //selecionar la columna que quieres colocar el barco
+    //en progreso
+    
+    // if (mode = 1){
+    //     do{
+    //         a = getch();
+    //         printf("%d",a);
+    //         if(a == 'w'){  
+    //             printf("↑");
+        
+    //         }
+    //         else if(a == 'a'){ 
+    //             printf("←");
+                
+    //         }
+    //         else if(a == 's'){ 
+    //             printf("↓");
+                
+    //         }
+    //         else if(a == 'd'){ 
+    //             printf("→");
+                
+    //         }
+    //         else {
+                
+    //         }
+    //     }while(true)
+        
+    //}
+    
+}
+void clearScreen(){
+  printf("\e[1;1H\e[2J");//limpiar la pantalla
+}
+
+// void delay(int timer){
+    
+//     timer *= 10000;
+//     for (int i = 0; i<= timer; i++){
+//         for (int j = 0; j<= timer; j++){
+            
+//         }
+//     }
+
+// }
+
+char getch(void){
+    char buf = 0;
+    struct termios old = {0};
+    fflush(stdout);
+    if(tcgetattr(0, &old) < 0)
+        perror("tcsetattr()");
+    old.c_lflag &= ~ICANON;
+    old.c_lflag &= ~ECHO;
+    old.c_cc[VMIN] = 1;
+    old.c_cc[VTIME] = 0;
+    if(tcsetattr(0, TCSANOW, &old) < 0)
+        perror("tcsetattr ICANON");
+    if(read(0, &buf, 1) < 0)
+        perror("read()");
+    old.c_lflag |= ICANON;
+    old.c_lflag |= ECHO;
+    if(tcsetattr(0, TCSADRAIN, &old) < 0)
+        perror("tcsetattr ~ICANON");
+    printf("%c\n", buf);
+    return buf;
+}
+void createEmptyBoard(char b[N][N]){
+    for (int i=0; i<N; i++){
+        for (int j=0; j<N; j++){
+            b[i][j] = '.';
+        }
+    }
+}
+
+void printBoard(char b[N][N]){
+    clearScreen();
+    //system("clear");
+
+    printf("\n    ");
+    for (int i=0; i<N; i++){ //imprimir la fila de arriba con las letras
+        cian("");
+        printf(" %c ",i+65);
+    }
+    printf("\n    ");
+    for (int i=0; i<N; i++){ //decoracion
+        cian("- -");
+    }
+    printf("\n");
+    
+    for (int i=0; i<N; i++){
+        printf(" %d ",i);
+        cian("|");
+        for (int j=0; j<N; j++){
+            reset();
+            printf("|"); //decoracion
+            printf("%c",b[i][j]); //imprimir la matriz de barcos
+            printf("|"); //decoracion
+        }
+    cian("|"); //decoracion
+    printf(" %d",i); //imprimir la columna con numeros
+    printf("\n");
+    }
+    printf("    ");
+    for (int i=0; i<N; i++){ //decoracion
+        cian("- -"); 
+    }
+    printf("\n    ");
+        for (int i=0; i<N; i++){ //imprimir la fila de arriba con las letras
+        printf(" %c ",i+65);
+    }
+
+}
+
+//colores
+void black(char a[]){
+    printf("\033[1;30m");
+    printf("%s",a);
+}
+void red(char a[]){
+    printf("\033[0;31m");
+    printf("%s",a);
+}
+void green(char a[]){
+    printf("\033[0;32m");
+    printf("%s",a);
+}
+void yellow(char a[]){
+    printf("\033[1;33m");
+    printf("%s",a);
+}
+void blue(char a[]){
+    printf("\033[0;34m");
+    printf("%s",a);
+    
+}
+void purple(char a[]){
+    printf("\033[0;35m");
+    printf("%s",a);
+}
+void cian(char a[]){
+    printf("\033[0;36m");
+    printf("%s",a);
+}
+void white(char a[]){
+    printf("\033[0;37m");
+    printf("%s",a);
+}
+
+void reset(){
+    printf("\033[0m");
+}
+// void printLoadMenu(){
+//     printf("Loaging...");
+//     for(int i = 0; i <=20;i++){
+//         for(int j= 0; j <=10000000;j++){
+            
+//         }
+//         printf("░");
+//     }
+//     printf("\n");
+// }
+
+//decoracion para imprimir menus y demas
+void printStart(bool q, bool w, bool e){
+    cian("....................................................................................................................\n");
+    for(int i =0;i<=4;i++){
+        cian(".");
+        printLogo(2,i,q);
+        cian(" . ");
+        printLogo(3,i,w);
+        cian(" . ");
+        printLogo(4,i,e);
+        cian(".");
+        printf("\n");
+    }
+    cian("....................................................................................................................\n");
+}
+void printLogo(int i,int b,bool a){
+    if(a){
+        green("");
+    }
+    else if(!a){
+        red("");
+    }
+    switch(i){
+        case 1:
+            if(b == 0)
+                
+                cian(".......................................................................................\n");
+                cian(".");
+                blue("██████╗░░ █████╗░ ████████╗ ████████╗ ██╗░░░░░ ███████╗ ░██████╗ ██╗░░██╗ ██╗ ██████╗░");
+                cian(".\n.");
+                blue("██╔══██╗ ██╔══██╗ ╚══██╔══╝ ╚══██╔══╝ ██║░░░░░ ██╔════╝ ██╔════╝ ██║░░██║ ██║ ██╔══██╗");
+                cian(".\n.");
+                blue("██████╦╝ ███████║ ░░░██║░░░ ░░░██║░░░ ██║░░░░░ █████╗░░ ╚█████╗░ ███████║ ██║ ██████╔╝");
+                cian(".\n.");
+                blue("██╔══██╗ ██╔══██║ ░░░██║░░░ ░░░██║░░░ ██║░░░░░ ██╔--╝░░ ░╚═══██╗ ██╔══██║ ██║ ██╔═══╝░");
+                cian(".\n.");
+                blue("██████╦╝ ██║░░██║ ░░░██║░░░ ░░░██║░░░ ███████╗ ███████╗ ██████╔╝ ██║░░██║ ██║ ██║░░░░░");
+                cian(".\n.");
+                blue("╚═════╝░ ╚═╝░░╚═╝ ░░░╚═╝░░░ ░░░╚═╝░░░ ╚══════╝ ╚══════╝ ╚═════╝░ ╚═╝░░╚═╝ ╚═╝ ╚═╝░░░░░");
+                cian(".\n.......................................................................................\n");
+                reset();
+            break;
+        case 2:
+            if(b == 0)
+                printf("██████╗░ ██╗░░░░░ ░█████╗░ ██╗░░░██╗");
+            else if(b == 1)
+                printf("██╔══██╗ ██║░░░░░ ██╔══██╗ ╚██╗░██╔╝");
+            else if(b == 2)
+                printf("██████╔╝ ██║░░░░░ ███████║ ░╚████╔╝░");
+            else if(b == 3)
+                printf("██╔═══╝░ ██║░░░░░ ██╔══██║ ░░╚██╔╝░░");
+            else if(b == 4)
+                printf("██║░░░░░ ███████╗ ██║░░██║ ░░░██║░░░");
+            else if(b == 5)
+                printf("╚═╝░░░░░ ╚══════╝ ╚═╝░░╚═╝ ░░░╚═╝░░░");
+            break;
+        case 3:
+            if(b == 0)
+                printf("░██████╗ ░█████╗░ ░█████╗░ ██████╗░ ███████╗");
+            else if(b == 1)
+                printf("██╔════╝ ██╔══██╗ ██╔══██╗ ██╔══██╗ ██╔════╝");
+            else if(b == 2)
+                printf("╚█████╗░ ██║░░╚═╝ ██║░░██║ ██████╔╝ █████╗░░");
+            else if(b == 3)
+                printf("░╚═══██╗ ██║░░██╗ ██║░░██║ ██╔══██╗ ██╔══╝░░");
+            else if(b == 4)
+                printf("██████╔╝ ╚█████╔╝ ╚█████╔╝ ██║░░██║ ███████╗");
+            else if(b == 5)
+                printf("╚═════╝░ ░╚════╝░ ░╚════╝░ ╚═╝░░╚═╝ ╚══════╝");
+            break;
+
+        case 4:
+            if(b == 0)
+                printf("███████╗██╗░░██╗██╗████████╗");
+            if(b == 1)
+                printf("██╔════╝╚██╗██╔╝██║╚══██╔══╝");
+            if(b == 2)
+                printf("█████╗░░░╚███╔╝░██║░░░██║░░░");
+            if(b == 3)
+                printf("██╔══╝░░░██╔██╗░██║░░░██║░░░");
+            if(b == 4)
+                printf("███████╗██╔╝╚██╗██║░░░██║░░░");
+            if(b == 5)
+                printf("╚══════╝╚═╝░░╚═╝╚═╝░░░╚═╝░░░");
+            break;
+            
+        case 5:
+            if(b == 0)
+                printf("░█████╗░ ██████╗░ ████████╗ ██╗ ░█████╗░ ███╗░░██╗");
+            else if(b == 1)
+                printf("██╔══██╗ ██╔══██╗ ╚══██╔══╝ ██║ ██╔══██╗ ████╗░██║");
+            else if(b == 2)
+                printf("██║░░██║ ██████╔╝ ░░░██║░░░ ██║ ██║░░██║ ██╔██╗██║");
+            else if(b == 3)
+                printf("██║░░██║ ██╔═══╝░ ░░░██║░░░ ██║ ██║░░██║ ██║╚████║");
+            else if(b == 4)
+                printf("╚█████╔╝ ██║░░░░░ ░░░██║░░░ ██║ ╚█████╔╝ ██║░╚███║");
+            else if(b == 5)
+                printf("░╚════╝░ ╚═╝░░░░░ ░░░╚═╝░░░ ╚═╝ ░╚════╝░ ╚═╝░░╚══╝");
+            //printf("\n");
+            break;
+        default:
+            //nop
+            break;
+            
+    }
+    
+    reset();
+}
+
 void imprimirJuego(char tablero1[N][N],char tablero2[N][N], int puntosJugador, int puntosIA){
     printf("\ntablero jugador 1");
     imprimirTablero(tablero2,false);
