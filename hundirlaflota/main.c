@@ -438,8 +438,6 @@ void insertarPuntuacion(char puntuacion[]){
     FILE *fichero = fopen(nombreFicheroPuntuaciones, "a+");
 
     if(fichero != NULL){
-        
-        printf("ENTRA CON %s",puntuacion);
 
         /* Insertamos un line break y el contenido */
         fputs(puntuacion, fichero);
