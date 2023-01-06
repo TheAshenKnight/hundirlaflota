@@ -24,11 +24,10 @@ void limpiarPantalla();
 void cian(char a[]);
 
 //puntuaciones
-char modoAperturaFicheroInsertarPuntuacion[2] = "a";
 char modoAperturaFicheroLeerFichero[2] = "r+";
 char nombreFicheroPuntuaciones[] = "puntuaciones.txt";
 void tratarOpcionPuntuaciones();
-void insertarPuntuacion(char* puntuacion);
+void insertarPuntuacion(char puntuacion[]);
 
 int main()
 {
@@ -58,9 +57,15 @@ int main()
     
     iaBarcosAleatorios(tablero1); //colocar los barcos de la ia
     
-    //imprimirJuego(tablero1,tablero2,puntosJugador,puntosIA); //imprimir los dos tableros del juego con los aciertos de cada uno
-    
+    //imprimirJuego(tablero1,tablero2,puntosJugador,puntosIA); //imprimir los dos tableros del juego con los aciertos de cada uno  
+
     while(!ganar){ //jugar partida
+
+        // Reinicializamos los disparos
+        disparoX = 0;
+        disparoY = 0;
+        disparo2Y = "";
+
         if(turno){
             imprimirJuego(tablero1,tablero2,puntosJugador,puntosIA);
             printf("\nIntruce el disparo en X(0-6): ");
@@ -109,17 +114,22 @@ int main()
         }
         
         if(puntosJugador == PUNTUACIONMAXIMA){
-            printf("\mEL Jugador ha ganado la partida");
+            printf("\nEL Jugador ha ganado la partida");
             ganar = true;
             // Guardamos la puntuacion
-            char iniciales[] = "";
-            printf("\mIntroduzca sus iniciales: ");
-            scanf("%c ",&iniciales);
+            char iniciales[4];
+            printf("\nIntroduzca sus iniciales: ");
+            scanf("%3s",iniciales);
+
+            char buf[BUFSIZ];
+            sprintf(buf, "%d ", numTurnos);
+
+            strcat(buf, iniciales);
             
-            insertarPuntuacion(strcat(iniciales, numTurnos));
+            insertarPuntuacion(buf);
         }
         else if(puntosIA == PUNTUACIONMAXIMA){
-            printf("\mLa IA ha ganado la partida");
+            printf("\nLa IA ha ganado la partida");
             ganar = true;
         }
             
@@ -422,16 +432,18 @@ void tratarOpcionPuntuaciones(){
 /**
  * Inserta en el fichero especificado en constantes la cadena de char introducida
 */
-void insertarPuntuacion(char* puntuacion){
+void insertarPuntuacion(char puntuacion[]){
 
     /* Abre el fichero en modo escritura */
-    FILE *fichero = fopen(nombreFicheroPuntuaciones, "a");
+    FILE *fichero = fopen(nombreFicheroPuntuaciones, "a+");
 
     if(fichero != NULL){
         
-        /* Insertamos un line break primero y luego el contenido */
-        fputs("\n", fichero);
+        printf("ENTRA CON %s",puntuacion);
+
+        /* Insertamos un line break y el contenido */
         fputs(puntuacion, fichero);
+        fputs("\n", fichero);
 
         fclose(fichero);
     }else{
