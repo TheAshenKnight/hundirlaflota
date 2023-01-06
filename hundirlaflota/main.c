@@ -35,8 +35,6 @@ void imprimirJuego(char tablero1[N][N],char tablero2[N][N],int puntosJugador, in
 void imprimirTablero(char tablero[N][N], bool oculto); //imprimir un tablero por pantalla,  se puede hacer de manera oculta no imprimiendo los barcos
 
 void limpiarPantalla();
-//colores
-void cian(char a[]);
 
 //puntuaciones
 char modoAperturaFicheroLeerFichero[2] = "r+";
@@ -824,13 +822,6 @@ void imprimirTablero(char tablero[N][N], bool oculto){
 
 void limpiarPantalla(){
   printf("\e[1;1H\e[2J");//limpiar la pantalla
-}
-
-//colores
-void cian(char a[]){
-    printf("\033[0;36m");
-    printf("%s",a);
-    printf("\033[0m");
 }
 
 /**
